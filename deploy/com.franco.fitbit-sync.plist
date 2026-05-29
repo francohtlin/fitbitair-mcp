@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <key>Label</key>
+  <string>com.franco.fitbit-sync</string>
+
+  <!-- Update WorkingDirectory to the absolute path of this repo -->
+  <key>WorkingDirectory</key>
+  <string>/Users/francohtlin1/fitbitair-mcp</string>
+
+  <!--
+    Uses `uv run` so the venv is activated automatically.
+    Requires uv to be on PATH; launchd uses a minimal PATH, so we reference
+    the full path. Find yours with: which uv
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/uv</string>
+    <string>run</string>
+    <string>fitbit-sync</string>
+  </array>
+
+  <!-- Run daily at 05:00 local time -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>5</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <!-- If the laptop was asleep at 05:00, run on next wake -->
+  <!-- (launchd default behaviour — no extra key needed) -->
+
+  <key>StandardOutPath</key>
+  <string>/Users/francohtlin/Library/Logs/fitbit-sync.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/francohtlin/Library/Logs/fitbit-sync.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- launchd doesn't inherit shell env; load .env via dotenv in Python -->
+    <key>HOME</key>
+    <string>/Users/francohtlin</string>
+  </dict>
+
+</dict>
+</plist>

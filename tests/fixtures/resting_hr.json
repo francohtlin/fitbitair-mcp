@@ -1,0 +1,12 @@
+{
+  "dataPoints": [
+    {
+      "dataSource": {"recordingMethod": "DERIVED", "device": {}, "platform": "FITBIT"},
+      "dailyRestingHeartRate": {
+        "date": {"year": 2026, "month": 5, "day": 28},
+        "beatsPerMinute": "53",
+        "dailyRestingHeartRateMetadata": {"calculationMethod": "WITH_SLEEP"}
+      }
+    }
+  ]
+}

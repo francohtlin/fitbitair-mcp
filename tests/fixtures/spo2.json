@@ -1,0 +1,13 @@
+{
+  "dataPoints": [
+    {
+      "dataSource": {"recordingMethod": "PASSIVELY_MEASURED", "device": {}, "platform": "FITBIT"},
+      "dailyOxygenSaturation": {
+        "date": {"year": 2026, "month": 5, "day": 28},
+        "averagePercentage": 95.5,
+        "lowerBoundPercentage": 92.9,
+        "upperBoundPercentage": 97.5
+      }
+    }
+  ]
+}

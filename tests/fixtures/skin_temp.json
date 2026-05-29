@@ -1,0 +1,13 @@
+{
+  "dataPoints": [
+    {
+      "dataSource": {"recordingMethod": "DERIVED", "device": {}, "platform": "FITBIT"},
+      "dailySleepTemperatureDerivations": {
+        "date": {"year": 2026, "month": 5, "day": 28},
+        "nightlyTemperatureCelsius": 32.876,
+        "baselineTemperatureCelsius": 32.5,
+        "relativeNightlyStddev30dCelsius": 0.38
+      }
+    }
+  ]
+}

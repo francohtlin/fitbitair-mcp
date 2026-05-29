@@ -1,0 +1,11 @@
+{
+  "dataPoints": [
+    {
+      "dataSource": {"recordingMethod": "DERIVED", "device": {}, "platform": "FITBIT"},
+      "dailyRespiratoryRate": {
+        "date": {"year": 2026, "month": 5, "day": 28},
+        "breathsPerMinute": 14.8
+      }
+    }
+  ]
+}
