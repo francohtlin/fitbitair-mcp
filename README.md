@@ -1,6 +1,79 @@
 # Fitbit Air → intervals.icu Sync
 
-A daily wellness sync that pushes Fitbit Air data into intervals.icu without overwriting fields owned by the Garmin Vivoactive 5 pipeline.
+A daily wellness sync that pushes Fitbit Air data into intervals.icu without overwriting fields owned by the Garmin Vivoactive 5 pipeline. Includes an MCP server so Claude (or any MCP client) can query your wellness data conversationally.
+
+## Quick start
+
+Prerequisites: macOS (for the launchd scheduling; the sync itself is portable), Python 3.12+, [uv](https://docs.astral.sh/uv/), a Fitbit device syncing to the Google Health API, and an [intervals.icu](https://intervals.icu) account.
+
+**1. Clone and install**
+
+```bash
+git clone https://github.com/francohtlin/fitbitair-mcp
+cd fitbitair-mcp
+uv sync
+```
+
+**2. Create a Google Cloud OAuth app** (for Google Health API access)
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com), create a project.
+2. Enable the **Google Health API** in the API Library.
+3. APIs & Services → OAuth consent screen: configure it, then **publish the app to "In production"**. ⚠️ Don't skip this — apps left in "Testing" status get their refresh tokens revoked after 7 days, and your sync will silently die a week later. (No Google verification is required for personal use with read-only health scopes.)
+4. APIs & Services → Credentials → Create Credentials → OAuth client ID → type **Desktop app**. Note the client ID and secret.
+
+**3. Get your intervals.icu credentials**
+
+intervals.icu → Settings → Developer Settings: copy your **Athlete ID** and **API Key**.
+
+**4. Configure**
+
+```bash
+cp .env.example .env
+```
+
+Fill in `FITBIT_CLIENT_ID`, `FITBIT_CLIENT_SECRET`, `INTERVALS_ATHLETE_ID`, `INTERVALS_API_KEY`, and your timezone.
+
+**5. Authorize with Google** (one time — opens a browser)
+
+```bash
+uv run python scripts/one_time_auth.py
+```
+
+Tokens are stored at `~/.config/fitbit-intervals-sync/tokens.json` and refresh automatically from then on.
+
+**6. Test the sync**
+
+```bash
+uv run fitbit-sync --dry-run --verbose   # preview yesterday's payload, writes nothing
+uv run fitbit-sync                       # sync yesterday for real
+```
+
+Check intervals.icu — yesterday's row should now show sleep, HRV, resting HR, etc.
+
+**7. Schedule it** (optional)
+
+Edit `deploy/com.fitbit-intervals-sync.plist` — replace `YOUR_USERNAME` and the repo path — then:
+
+```bash
+cp deploy/com.fitbit-intervals-sync.plist ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.fitbit-intervals-sync.plist
+```
+
+This runs daily at 05:00. There's also `com.fitbit-intervals-sync-daytime.plist`, which re-syncs today's data every 2 hours (8am–10pm) so steps stay current during the day. Logs go to `~/Library/Logs/fitbit-sync.log`.
+
+**8. Hook up the MCP server** (optional)
+
+```bash
+claude mcp add fitbit -- uv run --directory /path/to/fitbitair-mcp fitbit-mcp
+```
+
+This exposes three tools that read from intervals.icu (no Google auth needed at query time): `get_fitbit_wellness(date)`, `get_fitbit_sleep(date)`, and `get_fitbit_readiness(days)` — the latter computes a 0–100 composite readiness score from HRV, resting HR, and sleep score against your trailing baseline. See `CLAUDE.md` for example workflows.
+
+**Not using a Garmin too?** The field-partitioning logic below just means this sync only writes the fields listed as Fitbit-owned. If Fitbit is your only wearable, everything works the same — you simply won't have the Garmin-sourced fields.
+
+---
+
+*The rest of this README is the original design document — the ownership contract, architecture, and the sprint plan the repo was built from.*
 
 ## Context
 
