@@ -57,6 +57,7 @@ def _sync_date(
 
 @click.command()
 @click.option("--date", "single_date", default=None, help="Sync one specific date (YYYY-MM-DD).")
+@click.option("--today", "sync_today", is_flag=True, help="Sync today's date (for daytime/launchd use).")
 @click.option("--days", default=None, type=int, help="Sync the last N days.")
 @click.option("--from", "from_date", default=None, help="Start of date range (YYYY-MM-DD).")
 @click.option("--to", "to_date", default=None, help="End of date range (YYYY-MM-DD, inclusive).")
@@ -64,6 +65,7 @@ def _sync_date(
 @click.option("--verbose", is_flag=True, help="Enable debug logging.")
 def main(
     single_date: str | None,
+    sync_today: bool,
     days: int | None,
     from_date: str | None,
     to_date: str | None,
@@ -79,6 +81,8 @@ def main(
 
     if single_date:
         dates = [datetime.date.fromisoformat(single_date)]
+    elif sync_today:
+        dates = [today]
     elif days:
         dates = [today - datetime.timedelta(days=i) for i in range(1, days + 1)]
         dates.reverse()

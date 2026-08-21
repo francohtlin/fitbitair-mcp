@@ -40,9 +40,8 @@ def test_map_day_returns_expected_fields(full_payload: dict) -> None:
     assert "sleepSecs" in result
     assert "avgSleepingHR" in result
     assert "hrv" in result
-    assert "spo2" in result
+    assert "spO2" in result
     assert "respiration" in result
-    assert "skinTemp" in result
     assert "steps" in result
     assert "restingHR" in result
     assert "weight" in result
@@ -70,15 +69,11 @@ def test_hrv(full_payload: dict) -> None:
 
 
 def test_spo2(full_payload: dict) -> None:
-    assert map_day(full_payload, TARGET)["spo2"] == 95.5
+    assert map_day(full_payload, TARGET)["spO2"] == 95.5
 
 
 def test_respiration(full_payload: dict) -> None:
     assert map_day(full_payload, TARGET)["respiration"] == 14.8
-
-
-def test_skin_temp(full_payload: dict) -> None:
-    assert map_day(full_payload, TARGET)["skinTemp"] == 0.38
 
 
 def test_steps(full_payload: dict) -> None:

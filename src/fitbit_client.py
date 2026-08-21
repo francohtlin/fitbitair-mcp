@@ -141,8 +141,34 @@ class GoogleHealthClient:
     def get_skin_temp(self) -> dict[str, Any] | None:
         return self._get("daily-sleep-temperature-derivations")
 
+    def _sum_intraday_steps(self, date: datetime.date) -> dict[str, Any] | None:
+        """Sum intraday step intervals for a day that hasn't ended (today).
+        Filters by civil_start_time so we only count steps on the target civil date."""
+        url = f"{GOOGLE_HEALTH_BASE_URL}/users/me/dataTypes/steps/dataPoints"
+        filter_str = (
+            f'steps.interval.civil_start_time >= "{date}T00:00:00"'
+            f' AND steps.interval.civil_start_time < "{date + datetime.timedelta(days=1)}T00:00:00"'
+        )
+        try:
+            resp = self._session.get(
+                url, headers=self._auth_header(), params={"filter": filter_str, "pageSize": 1000}
+            )
+            resp.raise_for_status()
+            pts = resp.json().get("dataPoints", [])
+            # Filter to Fitbit Air only — Health Connect (phone) adds its own count and would double it
+            fitbit_pts = [p for p in pts if p.get("dataSource", {}).get("platform") == "FITBIT"]
+            total = sum(int(p["steps"]["count"]) for p in fitbit_pts if p.get("steps", {}).get("count"))
+            log.debug("steps intraday %s → %d Fitbit points (of %d total), total %d", date, len(fitbit_pts), len(pts), total)
+            return {"rollupDataPoints": [{"steps": {"countSum": str(total)}}]} if total > 0 else None
+        except Exception as e:
+            log.warning("steps intraday %s → %s", date, e)
+            return None
+
     def get_steps(self, date: datetime.date) -> dict[str, Any] | None:
-        return self._post_daily_rollup("steps", date)
+        # Always use intraday sum filtered to FITBIT platform.
+        # dailyRollUp aggregates all sources (including Health Connect phone steps)
+        # and can't be filtered, so we avoid it entirely.
+        return self._sum_intraday_steps(date)
 
     def get_resting_hr(self) -> dict[str, Any] | None:
         return self._get("daily-resting-heart-rate")

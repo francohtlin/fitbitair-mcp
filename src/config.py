@@ -32,7 +32,6 @@ FITBIT_OWNED_FIELDS = [
     "avgSleepingHR",
     "spO2",
     "respiration",
-    "skinTemp",
     "steps",
     "weight",
     "readiness",

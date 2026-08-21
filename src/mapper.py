@@ -71,12 +71,17 @@ def _extract_sleep(
     if not sleep_payload:
         return out
 
-    # Find the sleep session that ended on target date (local time)
+    # Find the FITBIT-sourced sleep session that ended on target date (local time).
+    # Prefer platform == FITBIT over HEALTH_CONNECT to match the Fitbit app numbers.
     pt = None
     for p in sleep_payload.get("dataPoints", []):
-        if _civil_end_date(p, "sleep") == target:
+        if _civil_end_date(p, "sleep") != target:
+            continue
+        if p.get("dataSource", {}).get("platform") == "FITBIT":
             pt = p
-            break
+            break  # exact match — take it
+        if pt is None:
+            pt = p  # fallback to first match if no FITBIT source found
     if not pt:
         return out
 
@@ -142,7 +147,7 @@ def _extract_spo2(spo2_payload: dict | None, target: datetime.date) -> dict[str,
             continue
         pct = d.get("averagePercentage")
         if pct and float(pct) > 0:
-            return {"spo2": round(float(pct), 1)}
+            return {"spO2": round(float(pct), 1)}
     return {}
 
 
@@ -231,7 +236,6 @@ def map_day(fitbit_day_payload: dict[str, Any], target: datetime.date) -> dict[s
     out.update(_extract_hrv(fitbit_day_payload.get("hrv"), target))
     out.update(_extract_spo2(fitbit_day_payload.get("spo2"), target))
     out.update(_extract_respiratory_rate(fitbit_day_payload.get("respiratory_rate"), target))
-    out.update(_extract_skin_temp(fitbit_day_payload.get("skin_temp"), target))
     out.update(_extract_steps(fitbit_day_payload.get("steps")))
     out.update(_extract_resting_hr(fitbit_day_payload.get("resting_hr"), target))
     out.update(_extract_weight(fitbit_day_payload.get("weight"), target))
