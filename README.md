@@ -78,7 +78,7 @@ fitbit-intervals-sync/
 ├── notes/
 │   └── sprint-0-findings.md # filled in during Sprint 0
 └── deploy/
-    └── com.franco.fitbit-sync.plist  # macOS launchd agent
+    └── com.fitbit-intervals-sync.plist  # macOS launchd agent
 ```
 
 ## Sprint 0: API verification (no code)
@@ -140,8 +140,8 @@ Acceptance: a daily sync writes every confirmed Fitbit-owned field, omits unavai
 ## Sprint 4: scheduling + backfill
 
 - `scripts/backfill.py --days 30`: idempotent backfill for the last N days. Re-runnable safely.
-- `deploy/com.franco.fitbit-sync.plist`: launchd agent, runs daily at 05:00 local time. Logs to `~/Library/Logs/fitbit-sync.log`. If the laptop is asleep, launchd runs on next wake.
-- Load: `launchctl load ~/Library/LaunchAgents/com.franco.fitbit-sync.plist`.
+- `deploy/com.fitbit-intervals-sync.plist`: launchd agent, runs daily at 05:00 local time. Logs to `~/Library/Logs/fitbit-sync.log`. If the laptop is asleep, launchd runs on next wake.
+- Load: `launchctl load ~/Library/LaunchAgents/com.fitbit-intervals-sync.plist`.
 
 Acceptance: 30-day backfill visible in intervals.icu. Next morning, log shows yesterday's auto-sync ran successfully.
 
@@ -186,7 +186,7 @@ FITBIT_CLIENT_ID=...
 FITBIT_CLIENT_SECRET=...
 INTERVALS_ATHLETE_ID=...
 INTERVALS_API_KEY=...
-SYNC_TIMEZONE=America/Toronto
+SYNC_TIMEZONE=America/New_York
 ```
 
 `src/config.py` constants:

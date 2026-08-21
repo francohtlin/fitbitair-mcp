@@ -5,10 +5,12 @@
 <dict>
 
   <key>Label</key>
-  <string>com.franco.fitbit-sync-daytime</string>
+  <string>com.fitbit-intervals-sync-daytime</string>
 
+  <!-- Replace YOUR_USERNAME (all occurrences below) with your macOS username,
+       and adjust the repo path if you cloned it elsewhere. -->
   <key>WorkingDirectory</key>
-  <string>/Users/francohtlin/fitbitair-mcp</string>
+  <string>/Users/YOUR_USERNAME/fitbitair-mcp</string>
 
   <key>ProgramArguments</key>
   <array>
@@ -32,15 +34,15 @@
   </array>
 
   <key>StandardOutPath</key>
-  <string>/Users/francohtlin/Library/Logs/fitbit-sync.log</string>
+  <string>/Users/YOUR_USERNAME/Library/Logs/fitbit-sync.log</string>
 
   <key>StandardErrorPath</key>
-  <string>/Users/francohtlin/Library/Logs/fitbit-sync.log</string>
+  <string>/Users/YOUR_USERNAME/Library/Logs/fitbit-sync.log</string>
 
   <key>EnvironmentVariables</key>
   <dict>
     <key>HOME</key>
-    <string>/Users/francohtlin</string>
+    <string>/Users/YOUR_USERNAME</string>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
   </dict>

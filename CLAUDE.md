@@ -8,7 +8,7 @@ When the user says **"morning pull"** (or "morning", "pull today's data", "sync 
 
 1. Run the Fitbit sync for today:
    ```bash
-   cd /Users/francohtlin/fitbitair-mcp && uv run fitbit-sync
+   cd <path-to-this-repo> && uv run fitbit-sync
    ```
 2. Call **both** MCPs in parallel:
    - `mcp__fitbit__get_fitbit_wellness` with today's date (YYYY-MM-DD)
@@ -35,7 +35,7 @@ When the user says **"day pull"**, **"fitbit check"**, **"how's my body today"**
 
 1. Sync today's latest data from the Air:
    ```bash
-   cd /Users/francohtlin/fitbitair-mcp && uv run fitbit-sync --date <today>
+   cd <path-to-this-repo> && uv run fitbit-sync --date <today>
    ```
 2. Call `fitbit:get_fitbit_wellness` with today's date.
 3. Present a **Fitbit Air only** summary — no Garmin fields, no training load:
