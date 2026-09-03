@@ -180,10 +180,10 @@ class GoogleHealthClient:
         """Fetch exercise sessions that started on `date` (civil time), Fitbit platform only."""
         next_day = date + datetime.timedelta(days=1)
         filter_str = (
-            f'exercise_session.interval.civil_start_time >= "{date}T00:00:00"'
-            f' AND exercise_session.interval.civil_start_time < "{next_day}T00:00:00"'
+            f'exercise.interval.civil_start_time >= "{date}T00:00:00"'
+            f' AND exercise.interval.civil_start_time < "{next_day}T00:00:00"'
         )
-        url = f"{GOOGLE_HEALTH_BASE_URL}/users/me/dataTypes/exercise-session/dataPoints"
+        url = f"{GOOGLE_HEALTH_BASE_URL}/users/me/dataTypes/exercise/dataPoints"
         try:
             resp = self._session.get(
                 url, headers=self._auth_header(),
@@ -193,15 +193,15 @@ class GoogleHealthClient:
             pts = resp.json().get("dataPoints", [])
             fitbit_pts = [p for p in pts if p.get("dataSource", {}).get("platform") == "FITBIT"]
             log.debug(
-                "exercise-session %s → %d Fitbit sessions (of %d total)",
+                "exercise %s → %d Fitbit sessions (of %d total)",
                 date, len(fitbit_pts), len(pts),
             )
             return {"dataPoints": fitbit_pts}
         except requests.HTTPError as e:
-            log.warning("exercise-session %s → HTTP %s", date, e.response.status_code)
+            log.warning("exercise %s → HTTP %s", date, e.response.status_code)
             return None
         except Exception as e:
-            log.warning("exercise-session %s → %s", date, e)
+            log.warning("exercise %s → %s", date, e)
             return None
 
     def get_active_energy(self, date: datetime.date) -> dict[str, Any] | None:

@@ -151,9 +151,9 @@ def get_fitbit_activities(date: str) -> dict[str, Any]:
     """Return exercise sessions tracked by Fitbit Air for `date` (YYYY-MM-DD).
 
     Fetches directly from Google Health API (not intervals.icu). Returns each
-    session with activity type, duration, start/end times, and any available
-    metrics (calories, steps, average HR). Only Fitbit-platform sessions are
-    returned — Health Connect / phone sessions are excluded.
+    session with activity type, duration, start/end times, calories, steps,
+    distance, average HR, and heart rate zone breakdown. Only Fitbit-platform
+    sessions are returned — Health Connect / phone auto-detects are excluded.
     """
     target = _parse_date(date)
     raw = _get_fitbit_client().get_exercise_sessions(target)
@@ -163,35 +163,61 @@ def get_fitbit_activities(date: str) -> dict[str, Any]:
 
     sessions: list[dict[str, Any]] = []
     for pt in raw["dataPoints"]:
-        # The top-level key is expected to be "exerciseSession"; fall back to
-        # the whole point so we don't silently drop data if the shape differs.
-        sess = pt.get("exerciseSession", pt)
-        interval = sess.get("interval", {})
+        ex = pt.get("exercise", {})
+        interval = ex.get("interval", {})
+        metrics = ex.get("metricsSummary", {})
 
         entry: dict[str, Any] = {}
 
-        activity_type = sess.get("activityType") or pt.get("activityType")
-        if activity_type:
-            entry["type"] = activity_type
+        name = ex.get("displayName") or ex.get("exerciseType")
+        if name:
+            entry["type"] = name
 
-        start_str = interval.get("startTime") or sess.get("startTime")
-        end_str = interval.get("endTime") or sess.get("endTime")
+        start_str = interval.get("startTime")
+        end_str = interval.get("endTime")
         if start_str:
             entry["start"] = start_str
         if end_str:
             entry["end"] = end_str
-        if start_str and end_str:
+
+        active_dur = ex.get("activeDuration", "")
+        if active_dur:
             try:
-                s = datetime.datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                e_dt = datetime.datetime.fromisoformat(end_str.replace("Z", "+00:00"))
-                entry["duration_mins"] = int((e_dt - s).total_seconds() / 60)
-            except Exception:
+                secs = float(active_dur.rstrip("s"))
+                entry["duration_mins"] = round(secs / 60, 1)
+            except ValueError:
                 pass
 
-        for field in ("calories", "steps", "distanceMeters", "averageHeartRateBpm"):
-            val = sess.get(field)
-            if val is not None:
-                entry[field] = val
+        cal = metrics.get("caloriesKcal")
+        if cal is not None:
+            entry["calories_kcal"] = int(cal)
+
+        dist_mm = metrics.get("distanceMillimeters")
+        if dist_mm:
+            entry["distance_km"] = round(int(dist_mm) / 1_000_000, 2)
+
+        steps = metrics.get("steps")
+        if steps:
+            entry["steps"] = int(steps)
+
+        avg_hr = metrics.get("averageHeartRateBeatsPerMinute")
+        if avg_hr:
+            entry["avg_hr"] = int(avg_hr)
+
+        azm = metrics.get("activeZoneMinutes")
+        if azm:
+            entry["active_zone_mins"] = int(azm)
+
+        zones = metrics.get("heartRateZoneDurations", {})
+        if zones:
+            def _mins(val: str) -> int:
+                return int(int(val.rstrip("s")) / 60) if val else 0
+            entry["hr_zones"] = {
+                "light": _mins(zones.get("lightTime", "0s")),
+                "moderate": _mins(zones.get("moderateTime", "0s")),
+                "vigorous": _mins(zones.get("vigorousTime", "0s")),
+                "peak": _mins(zones.get("peakTime", "0s")),
+            }
 
         sessions.append(entry)
 
