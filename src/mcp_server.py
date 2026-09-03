@@ -8,6 +8,7 @@ Tools:
   get_fitbit_wellness(date)     - full wellness row for one date
   get_fitbit_sleep(date)        - sleep subset for one date
   get_fitbit_readiness(days)    - composite over HRV, RHR, sleep across N days
+  get_fitbit_activities(date)   - exercise sessions for one date (direct from Google Health API)
 """
 
 from __future__ import annotations
@@ -19,11 +20,20 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from src.config import FITBIT_OWNED_FIELDS
+from src.fitbit_client import GoogleHealthClient
 from src.intervals_client import IntervalsClient
 
 mcp = FastMCP("fitbit-air")
 
 _client: IntervalsClient | None = None
+_fitbit_client: GoogleHealthClient | None = None
+
+
+def _get_fitbit_client() -> GoogleHealthClient:
+    global _fitbit_client
+    if _fitbit_client is None:
+        _fitbit_client = GoogleHealthClient()
+    return _fitbit_client
 
 
 def _get_client() -> IntervalsClient:
@@ -134,6 +144,58 @@ def _composite(
         return None
     total_w = sum(w for _, w in parts)
     return round(sum(v * w for v, w in parts) / total_w, 1)
+
+
+@mcp.tool()
+def get_fitbit_activities(date: str) -> dict[str, Any]:
+    """Return exercise sessions tracked by Fitbit Air for `date` (YYYY-MM-DD).
+
+    Fetches directly from Google Health API (not intervals.icu). Returns each
+    session with activity type, duration, start/end times, and any available
+    metrics (calories, steps, average HR). Only Fitbit-platform sessions are
+    returned — Health Connect / phone sessions are excluded.
+    """
+    target = _parse_date(date)
+    raw = _get_fitbit_client().get_exercise_sessions(target)
+
+    if not raw or not raw.get("dataPoints"):
+        return {"date": date, "count": 0, "sessions": []}
+
+    sessions: list[dict[str, Any]] = []
+    for pt in raw["dataPoints"]:
+        # The top-level key is expected to be "exerciseSession"; fall back to
+        # the whole point so we don't silently drop data if the shape differs.
+        sess = pt.get("exerciseSession", pt)
+        interval = sess.get("interval", {})
+
+        entry: dict[str, Any] = {}
+
+        activity_type = sess.get("activityType") or pt.get("activityType")
+        if activity_type:
+            entry["type"] = activity_type
+
+        start_str = interval.get("startTime") or sess.get("startTime")
+        end_str = interval.get("endTime") or sess.get("endTime")
+        if start_str:
+            entry["start"] = start_str
+        if end_str:
+            entry["end"] = end_str
+        if start_str and end_str:
+            try:
+                s = datetime.datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+                e_dt = datetime.datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+                entry["duration_mins"] = int((e_dt - s).total_seconds() / 60)
+            except Exception:
+                pass
+
+        for field in ("calories", "steps", "distanceMeters", "averageHeartRateBpm"):
+            val = sess.get(field)
+            if val is not None:
+                entry[field] = val
+
+        sessions.append(entry)
+
+    return {"date": date, "count": len(sessions), "sessions": sessions}
 
 
 def main() -> None:
